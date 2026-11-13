@@ -1,0 +1,92 @@
+/* ===== پنل مدیریت ===== */
+.adm{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.adm-side{position:sticky;top:0;height:100vh;background:var(--surface);border-inline-end:1px solid var(--border);padding:1.2rem;display:flex;flex-direction:column;gap:1.2rem}
+.adm-brand{display:flex;gap:.7rem;align-items:center}
+.adm-brand small{display:block;color:var(--muted);font-size:.78rem}
+#admNav{display:grid;gap:.3rem}
+#admNav button{display:flex;align-items:center;gap:.7rem;padding:.65rem .9rem;border-radius:12px;border:0;background:transparent;text-align:start;color:var(--muted);transition:.2s}
+#admNav button:hover{background:var(--surface-2);color:var(--text)}
+#admNav button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.adm-foot{margin-top:auto;display:flex;gap:.5rem;align-items:center;justify-content:space-between}
+.adm-main{padding:1.4rem clamp(1rem,3vw,2.2rem) 4rem;min-width:0}
+.adm-top{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap}
+.adm-top h1{font-size:1.5rem}
+.save{font-size:.8rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:.1rem .8rem}
+.save.ok{color:#16a34a}.save.err{color:#e5484d}
+#panel{display:grid;gap:1.1rem}
+.card-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.2rem;box-shadow:var(--shadow)}
+.card-box h3{font-size:1.05rem;margin-bottom:.8rem}
+.dropzone{border:2px dashed color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:var(--radius);background:var(--accent-soft);padding:2rem 1rem;text-align:center;cursor:pointer;transition:.25s var(--ease);color:var(--accent)}
+.dropzone:hover,.dropzone.over{background:color-mix(in srgb,var(--accent) 22%,transparent);transform:scale(1.005)}
+.dropzone h3{margin:.4rem 0 .1rem;color:var(--text)}.dropzone p{margin:0;color:var(--muted);font-size:.9rem}
+.dropzone.busy{opacity:.6;pointer-events:none}
+.stage-head{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem}
+.stage-head h3{margin:0}.stage-common{display:flex;gap:.5rem;flex-wrap:wrap}
+.stage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.9rem;margin-bottom:1rem}
+.scard{position:relative;display:grid;gap:.5rem;border:1px solid var(--border);border-radius:14px;padding:.6rem;background:var(--bg)}
+.scard img{width:100%;height:140px;object-fit:cover;border-radius:10px}
+.scard .x{position:absolute;top:.9rem;inset-inline-start:.9rem;width:28px;height:28px;border-radius:50%;border:0;background:rgba(10,16,24,.6);color:#fff;line-height:1}
+.scard .input,.scard .select{padding:.4rem .6rem;font-size:.84rem;width:100%}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.chk-line{display:flex;gap:.5rem;align-items:center;font-size:.85rem;color:var(--text)}
+.toolbar-admin{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.toolbar-admin .input{flex:1 1 200px;width:auto}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:.4rem .9rem;font-size:.84rem}
+.seg button.on{background:var(--accent);color:var(--accent-contrast)}
+.bulk{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;font-size:.88rem}
+.bulk-n{font-weight:700;color:var(--accent)}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.9rem}
+.lcard{position:relative;background:var(--surface);border:2px solid var(--border);border-radius:14px;overflow:hidden;cursor:grab;transition:.2s var(--ease)}
+.lcard:hover{box-shadow:var(--shadow)}
+.lcard.sel{border-color:var(--accent)}
+.lcard.drag{opacity:.4}.lcard.over{border-color:var(--accent);transform:scale(1.03)}
+.lcard img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--surface-2)}
+.lcard .chk{position:absolute;top:.5rem;inset-inline-end:.5rem;background:rgba(10,16,24,.55);border-radius:8px;padding:.2rem .35rem;display:flex}
+.lcard .star-badge{position:absolute;top:.5rem;inset-inline-start:.5rem;background:#f5b301;color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center}
+.lcard .star-badge svg{fill:currentColor}
+.cover-badge{position:absolute;top:2.2rem;inset-inline-start:.5rem;background:var(--accent);color:var(--accent-contrast);font-size:.7rem;padding:0 .5rem;border-radius:999px}
+.lmeta{padding:.45rem .7rem 0;display:grid}
+.lmeta b{font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmeta small{color:var(--muted);font-size:.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lacts{display:flex;justify-content:space-between;padding:.4rem .5rem .5rem}
+.lacts button{border:0;background:transparent;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.lacts button:hover{background:var(--surface-2);color:var(--accent)}
+.lacts button.d:hover{color:#e5484d}.lacts button.on{color:#f5b301}.lacts button.on svg{fill:currentColor}
+.empty-box{padding:2rem;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius)}
+.inline-form{display:flex;gap:.6rem;flex-wrap:wrap}.inline-form .input{flex:1 1 220px;width:auto}
+.album-admin{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.acard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.acover{aspect-ratio:16/9;background:var(--surface-2);display:grid;place-items:center;color:var(--muted)}
+.acover img{width:100%;height:100%;object-fit:cover}
+.abody{padding:.9rem 1rem;display:grid;gap:.4rem}.abody small{color:var(--muted)}
+.aacts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.3rem}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.fields{display:grid;gap:.8rem;align-content:start}
+.upl{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+.upl .pv{width:72px;height:72px;border-radius:14px;background:var(--surface-2) center/cover;border:1px solid var(--border)}
+.swatches{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin-top:.4rem}
+.swatches button{width:28px;height:28px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border)}
+.swatches input[type=color]{width:38px;height:32px;border:0;background:none;padding:0}
+.cat-row{display:flex;gap:.5rem;margin-bottom:.5rem}.cat-row .input{flex:1}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem}
+.stat-c{background:var(--bg);border-radius:14px;padding:.8rem 1rem}
+.stat-c b{display:block;font-size:1.6rem;color:var(--accent)}.stat-c span{font-size:.82rem;color:var(--muted)}
+.steps{margin:0;padding-inline-start:1.3rem;display:grid;gap:.4rem;color:var(--muted)}
+.steps b{color:var(--text)}
+.btn-row{display:flex;gap:.6rem;flex-wrap:wrap}
+.note{background:var(--accent-soft);border-radius:12px;padding:.7rem 1rem;font-size:.88rem}
+.edit-grid{display:grid;grid-template-columns:200px 1fr;gap:1rem}
+.edit-prev{width:100%;border-radius:12px;aspect-ratio:1;object-fit:cover}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.5rem;max-height:46vh;overflow:auto}
+.pick{position:relative;display:block;border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;padding:0;background:none}
+.pick img{width:100%;aspect-ratio:1;object-fit:cover}
+.pick span{display:block;font-size:.72rem;padding:.1rem .4rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick input{position:absolute;top:.3rem;inset-inline-end:.3rem}
+.pick:hover{border-color:var(--accent)}
+@media (max-width:860px){
+ .adm{grid-template-columns:1fr}
+ .adm-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:.7rem;border-inline-end:0;border-bottom:1px solid var(--border)}
+ .adm-brand{display:none}#admNav{display:flex;overflow-x:auto;flex:1}#admNav button{white-space:nowrap;padding:.5rem .8rem}
+ .adm-foot{margin:0}.edit-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>گالری تصاویر</title>
+<meta name="description" content="گالری تصاویر">
+<script>try{var t=localStorage.getItem('gal_theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2312a594'/%3E%3Ccircle cx='16' cy='16' r='6' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/gallery.css">
+</head>
+<body>
+<div id="draftBar" class="draft-bar" hidden></div>
+<header class="site-header">
+  <a class="brand" href="#/"><span class="logo" id="brandLogo"></span><span id="brandName">گالری</span></a>
+  <nav class="nav" id="nav" aria-label="منوی اصلی">
+    <a href="#/" data-route="gallery">گالری</a>
+    <a href="#/albums" data-route="albums">آلبوم‌ها</a>
+    <a href="#/favorites" data-route="favorites">علاقه‌مندی‌ها <span class="count" id="favCount"></span></a>
+    <a href="#/about" data-route="about">درباره</a>
+  </nav>
+  <div class="head-actions">
+    <button class="icon-btn" id="btnSlideshow" title="اسلایدشو" aria-label="اسلایدشو"></button>
+    <button class="icon-btn" id="btnTheme" title="تغییر تم روشن/تاریک" aria-label="تغییر تم"></button>
+    <a class="icon-btn" href="admin.html" title="پنل مدیریت" aria-label="پنل مدیریت" data-icon="cog"></a>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-inner">
+      <h1 id="heroTitle"></h1>
+      <p id="heroDesc"></p>
+      <div class="stats" id="stats"></div>
+      <div class="hero-cta">
+        <button class="btn primary" id="ctaView">مشاهده تصاویر</button>
+        <button class="btn glass" id="ctaShow"></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-gallery" class="container">
+    <div class="page-head" id="albumHead" hidden><a href="#/albums" class="btn sm ghost">بازگشت به آلبوم‌ها</a><h2 id="albumTitle"></h2></div>
+    <div class="page-head" id="favHead" hidden><h2>علاقه‌مندی‌های من</h2></div>
+    <div class="toolbar" id="toolbar">
+      <div class="search"><span data-icon="search" data-size="18"></span><input id="q" type="search" placeholder="جستجو در عنوان و توضیحات…" autocomplete="off" aria-label="جستجو"></div>
+      <select id="sort" class="select" aria-label="مرتب‌سازی">
+        <option value="custom">چیدمان پیش‌فرض</option><option value="new">جدیدترین</option><option value="old">قدیمی‌ترین</option>
+      </select>
+      <select id="albumSel" class="select" aria-label="آلبوم"></select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="result-line" id="resultLine"></div>
+    <div id="grid" class="grid"></div>
+    <div class="empty" id="empty" hidden><span data-icon="image" data-size="48"></span><p id="emptyText"></p></div>
+    <div class="more" id="moreBox"><button id="btnMore" class="btn">نمایش بیشتر</button></div>
+  </section>
+
+  <section id="view-albums" class="container" hidden>
+    <div class="page-head"><h2>آلبوم‌ها</h2></div>
+    <div class="album-grid" id="albumGrid"></div>
+  </section>
+
+  <section id="view-about" class="container" hidden><div class="about" id="aboutBox"></div></section>
+</main>
+
+<footer class="site-footer"><span id="footName"></span><a href="admin.html">مدیریت گالری</a></footer>
+
+<div id="lb" class="lb" hidden aria-hidden="true" role="dialog" aria-label="نمایش تصویر" tabindex="-1">
+  <div class="lb-progress" id="lbProg"></div>
+  <div class="lb-top">
+    <span class="lb-count" id="lbCount"></span>
+    <div class="lb-tools">
+      <button class="icon-btn" id="lbZoomOut" title="کوچک‌نمایی" data-icon="minus"></button>
+      <button class="icon-btn" id="lbZoomIn" title="بزرگ‌نمایی" data-icon="plus"></button>
+      <button class="icon-btn" id="lbReset" title="اندازه اصلی" data-icon="expand"></button>
+      <button class="icon-btn" id="lbPlay" title="اسلایدشو" data-icon="play"></button>
+      
+      <button class="icon-btn" id="lbClose" title="بستن (Esc)" data-icon="x"></button>
+    </div>
+  </div>
+  <button class="lb-nav prev" id="lbPrev" aria-label="تصویر قبلی" data-icon="chevR" data-size="24"></button>
+  <button class="lb-nav next" id="lbNext" aria-label="تصویر بعدی" data-icon="chevL" data-size="24"></button>
+  <div class="lb-stage" id="lbStage"><img id="lbImg" alt="" draggable="false"></div>
+  <div class="lb-info">
+    <div class="lb-row">
+      <div class="lb-text"><h3 id="lbTitle"></h3><p id="lbDesc"></p><div class="lb-meta" id="lbMeta"></div></div>
+      <div class="lb-actions">
+        <button class="btn sm" id="lbFav"><span data-icon="heart" data-size="16"></span> علاقه‌مندی</button>
+        <button class="btn sm" id="lbDownload"><span data-icon="download" data-size="16"></span> دانلود</button>
+        <button class="btn sm" id="lbShare"><span data-icon="share" data-size="16"></span> اشتراک</button>
+        <button class="btn sm" id="lbCopy"><span data-icon="link" data-size="16"></span> لینک تصویر</button>
+        <button class="btn sm" id="lbFull"><span data-icon="expand" data-size="16"></span> تمام‌صفحه</button>
+      </div>
+    </div>
+    <div class="lb-similar" id="lbSimilar"></div>
+  </div>
+</div>
+
+<script src="data/gallery.js"></script>
+<script src="assets/js/util.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/gallery.js"></script>
+</body>
+</html>
