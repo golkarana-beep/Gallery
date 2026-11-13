@@ -78,31 +78,43 @@
     async save(data) { await db.put('meta', 'gallery', data); await gc(data); },
     async addBlob(blob) { const key = G.uid('b'); await db.put('blobs', key, blob); const ref = 'local:' + key; urlCache[ref] = URL.createObjectURL(blob); return ref; },
     async resetLocal() { await db.clear('meta'); await db.clear('blobs'); Object.keys(urlCache).forEach(k => { URL.revokeObjectURL(urlCache[k]); delete urlCache[k]; }); },
-    /** ساخت بسته انتشار: data/gallery.json + data/gallery.js + assets/images/... */
-    async buildPackage(data, onProgress) {
-      const out = JSON.parse(JSON.stringify(data)), files = [], map = {};
+    async getPubMap() { try { return (await db.get('meta', 'pubmap')) || {}; } catch (e) { return {}; } },
+    async setPubMap(m) { await db.put('meta', 'pubmap', m); },
+    /** آماده‌سازی فایل‌های انتشار. opts.remote (مجموعه مسیرهای موجود در مخزن) و opts.known (نگاشت تصاویر محلی منتشرشده) از آپلود دوباره جلوگیری می‌کنند */
+    async buildFiles(data, opts) {
+      opts = opts || {};
+      const out = JSON.parse(JSON.stringify(data)), files = [], map = {}, newLocal = {};
       const pack = async (ref, nameFn) => {
         if (!ref) return ''; if (map[ref] !== undefined) return map[ref];
+        const isLocal = ref.startsWith('local:');
+        if (opts.remote) {
+          if (isLocal && opts.known && opts.known[ref] && opts.remote.has(opts.known[ref])) return (map[ref] = opts.known[ref]);
+          if (!isLocal && opts.remote.has(ref)) return (map[ref] = ref);
+        }
         let b; try { b = await blobOf(ref); } catch (e) { map[ref] = ref; return ref; }
         if (!b) { map[ref] = ''; return ''; }
-        const path = ref.startsWith('local:') ? nameFn(b) : ref;
-        map[ref] = path; files.push({ name: path, data: b }); return path;
+        const path = isLocal ? nameFn(b) : ref;
+        map[ref] = path; if (isLocal) newLocal[ref] = path; files.push({ name: path, data: b }); return path;
       };
       const total = out.images.length;
       for (let i = 0; i < total; i++) {
         const im = out.images[i], nm = im.fileName || '';
         im.src = await pack(im.src, b => `assets/images/${im.id}.${G.extOf(b.type, nm)}`);
         im.thumb = (await pack(im.thumb, b => `assets/images/thumbs/${im.id}.${G.extOf(b.type, nm)}`)) || im.src;
-        if (onProgress) onProgress(i + 1, total);
+        if (opts.onProgress) opts.onProgress(i + 1, total);
       }
       out.settings.logo = await pack(out.settings.logo, b => `assets/images/logo.${G.extOf(b.type)}`);
       out.settings.banner = await pack(out.settings.banner, b => `assets/images/banner.${G.extOf(b.type)}`);
       out.about.photo = await pack(out.about.photo, b => `assets/images/about.${G.extOf(b.type)}`);
-      const json = JSON.stringify(out, null, 1);
-      files.push({ name: 'data/gallery.json', data: json });
+      files.push({ name: 'data/gallery.json', data: JSON.stringify(out, null, 1) });
       files.push({ name: 'data/gallery.js', data: 'window.GALLERY_DATA = ' + JSON.stringify(out) + ';\n' });
-      files.push({ name: 'README.txt', data: 'بسته انتشار گالری\n\nپوشه‌های data و assets/images را در ریشه مخزن GitHub خود جایگزین کنید (همان مسیرها)، سپس commit و push کنید.\n' });
-      return G.zip(files);
+      return { out, files, newLocal };
+    },
+    /** بسته ZIP برای انتشار دستی */
+    async buildPackage(data, onProgress) {
+      const r = await G.Store.buildFiles(data, { onProgress });
+      r.files.push({ name: 'README.txt', data: 'بسته انتشار گالری\n\nپوشه‌های data و assets/images را در ریشه مخزن GitHub خود جایگزین کنید (همان مسیرها)، سپس commit و push کنید.\n' });
+      return G.zip(r.files);
     }
   };
 })();

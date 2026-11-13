@@ -7,6 +7,7 @@
   const TABS = [['images', 'تصاویر', 'image'], ['albums', 'آلبوم‌ها', 'folder'], ['settings', 'تنظیمات', 'sliders'], ['about', 'درباره ما', 'user'], ['publish', 'انتشار و خروجی', 'upload']];
   const ACCENTS = ['#12a594', '#2f6bff', '#7c5cff', '#e5484d', '#f59e0b', '#16a34a', '#db2777', '#0f172a'];
 
+  const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
   const img = id => DATA.images.find(i => i.id === id);
   const albumObj = id => DATA.albums.find(a => a.id === id);
   const catName = id => (DATA.categories.find(c => c.id === id) || {}).name || '';
@@ -22,7 +23,23 @@
     try { await G.Store.save(DATA); setSave('ok'); } catch (e) { console.error(e); setSave('err'); G.toast('ذخیره انجام نشد (فضای مرورگر پر است؟)', 'err'); }
   }, 350);
   function setSave(s) { ST.saving = s === 'saving'; const el = $('#saveState'); el.className = 'save ' + s; el.textContent = { ok: '✓ ذخیره شد', saving: 'در حال ذخیره…', err: 'خطا در ذخیره', idle: MODE === 'local' ? 'پیش‌نویس محلی' : 'نسخه منتشرشده (تغییری ثبت نشده)' }[s]; }
-  function touch() { setSave('saving'); G.applySettings(DATA.settings); chrome(); saveSoon(); }
+  function touch() { setSave('saving'); ls.set('gal_dirty', '1'); G.applySettings(DATA.settings); chrome(); pubState(); saveSoon(); }
+  function pubState() {
+    const b = $('#btnPub'); if (!b || b.disabled) return; const dirty = ls.get('gal_dirty') === '1';
+    b.classList.toggle('primary', dirty); b.textContent = dirty ? 'انتشار تغییرات روی سایت' : 'انتشار روی سایت';
+  }
+  async function publishNow(btn, restore) {
+    const cfg = G.GitHub.getCfg();
+    if (!cfg.token || !cfg.owner || !cfg.repo) { G.toast('ابتدا اتصال GitHub را در بخش «انتشار و خروجی» تنظیم کنید'); ST.tab = 'publish'; render(); return; }
+    btn.disabled = true;
+    try {
+      await G.Store.save(DATA);
+      const r = await G.GitHub.publish(cfg, DATA, m => { btn.textContent = m; });
+      ls.del('gal_dirty');
+      G.toast(r.unchanged ? 'تغییر جدیدی برای انتشار نبود' : 'منتشر شد؛ تا ۱ تا ۲ دقیقه دیگر روی سایت دیده می‌شود', 'ok');
+    } catch (e) { console.error(e); G.toast(G.GitHub.explain(e), 'err'); }
+    btn.disabled = false; if (restore) btn.innerHTML = restore; pubState();
+  }
   function chrome() {
     $('#admName').textContent = DATA.settings.name; const l = G.src(DATA.settings.logo), el = $('#admLogo');
     el.style.backgroundImage = l ? `url("${l}")` : ''; el.textContent = l ? '' : (DATA.settings.name || 'گ').trim().charAt(0);
@@ -37,7 +54,7 @@
     try { const r = await G.Store.load(); DATA = r.data; MODE = r.mode; } catch (e) { DATA = G.normalize(null); MODE = 'published'; }
     $('#admNav').innerHTML = TABS.map(t => `<button data-tab="${t[0]}">${G.icon(t[2], 18)}<span>${t[1]}</span></button>`).join('');
     $('#admNav').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { ST.tab = b.dataset.tab; render(); } };
-    G.applySettings(DATA.settings); chrome(); setSave('idle'); render();
+    G.applySettings(DATA.settings); chrome(); setSave('idle'); pubState(); $('#btnPub').onclick = e => publishNow(e.currentTarget); render();
   }
   function render() {
     $$('#admNav button').forEach(b => b.classList.toggle('on', b.dataset.tab === ST.tab));
@@ -93,7 +110,7 @@
     const el = $('#staging'); if (!el) return; const n = ST.staged.length;
     if (!n) { el.innerHTML = ''; return; }
     el.innerHTML = `<div class="card-box"><div class="stage-head"><h3>پیش‌نمایش پیش از ثبت (${fa(n)} تصویر)</h3>
-      <div class="stage-common"><select id="sC" class="select sm"><option value="">دسته‌بندی برای همه…</option>${catOpts('')}</select><select id="sA" class="select sm"><option value="">آلبوم برای همه…</option>${albOpts('')}</select></div></div>
+      <label class="chk-line"><input type="checkbox" id="sOpt" ${ST.optimize === false ? '' : 'checked'}> بهینه‌سازی اندازه (حداکثر ۲۵۶۰ پیکسل)</label><div class="stage-common"><select id="sC" class="select sm"><option value="">دسته‌بندی برای همه…</option>${catOpts('')}</select><select id="sA" class="select sm"><option value="">آلبوم برای همه…</option>${albOpts('')}</select></div></div>
       <div class="stage-grid">${ST.staged.map(s => `<div class="scard" data-k="${s.k}"><button class="x" data-rm title="حذف از لیست">×</button><img src="${s.url}" alt="">
         <input class="input sTitle" value="${esc(s.title)}" placeholder="عنوان"><textarea class="input sDesc" rows="2" placeholder="توضیحات">${esc(s.desc)}</textarea>
         <div class="row2"><select class="select sCat"><option value="">بدون دسته</option>${catOpts(s.category)}</select><select class="select sAlb"><option value="">بدون آلبوم</option>${albOpts(s.album)}</select></div>
@@ -111,13 +128,15 @@
     $('#sC').onchange = e => { if (e.target.value) { ST.staged.forEach(s => s.category = e.target.value); drawStaging(); } };
     $('#sA').onchange = e => { if (e.target.value) { ST.staged.forEach(s => { s.album = e.target.value; }); drawStaging(); } };
     $('#sCancel').onclick = () => { ST.staged.forEach(s => URL.revokeObjectURL(s.url)); ST.staged = []; drawStaging(); };
+    $('#sOpt').onchange = e => { ST.optimize = e.target.checked; };
     $('#sSave').onclick = commitStaged;
   }
   async function commitStaged() {
     const btn = $('#sSave'); btn.disabled = true; btn.textContent = 'در حال ذخیره…';
     try {
       for (const s of ST.staged) {
-        const src = await G.Store.addBlob(s.file), th = s.thumb ? await G.Store.addBlob(s.thumb) : src, id = G.uid('img');
+        let blob = s.file; if (ST.optimize !== false && Math.max(s.w, s.h) > 2560 && !/svg|gif/.test(s.file.type)) { try { blob = await G.resizeImage(s.file, 2560, 'image/jpeg', 0.9); } catch (e) { blob = s.file; } }
+        const src = await G.Store.addBlob(blob), th = s.thumb ? await G.Store.addBlob(s.thumb) : src, id = G.uid('img');
         DATA.images.push({ id, src, thumb: th, title: s.title.trim() || 'بدون عنوان', desc: s.desc.trim(), category: s.category, album: s.album, date: new Date(s.file.lastModified || Date.now()).toISOString(), featured: false, w: s.w, h: s.h, fileName: s.file.name });
         if (s.cover && s.album) { const a = albumObj(s.album); if (a) a.coverId = id; }
         URL.revokeObjectURL(s.url);
@@ -330,9 +349,16 @@
   /* ================= انتشار و خروجی ================= */
   async function renderPublish() {
     const hasSample = DATA.images.some(i => i.sample) || DATA.albums.some(a => a.sample) || DATA.categories.some(c => c.sample);
+    const gh = G.GitHub.getCfg();
     $('#panel').innerHTML = `<div class="stat-cards">${[[DATA.images.length, 'تصویر'], [DATA.albums.length, 'آلبوم'], [DATA.categories.length, 'دسته‌بندی'], [DATA.images.filter(i => i.featured).length, 'منتخب']].map(x => `<div class="stat-c"><b>${fa(x[0])}</b><span>${x[1]}</span></div>`).join('')}<div class="stat-c"><b id="usage">…</b><span>فضای مصرفی مرورگر</span></div></div>
-      <div class="card-box"><h3>انتشار روی GitHub Pages</h3>
-      <div class="note" style="margin-bottom:.8rem">تصاویر و تغییراتی که اینجا انجام می‌دهید فقط در همین مرورگر ذخیره می‌شوند و خودکار روی GitHub منتشر نمی‌شوند. برای انتشار عمومی، این مراحل را انجام دهید:</div>
+      <div class="card-box"><h3>انتشار مستقیم روی GitHub (از همین پنل)</h3>
+      <div class="note" style="margin-bottom:.8rem">یک‌بار اتصال را تنظیم کنید؛ بعد از آن با یک کلیک همه تصاویر و تغییرات در مخزن شما commit می‌شود و GitHub Pages خودش سایت را به‌روز می‌کند.</div>
+      <div class="form-grid"><label>نام کاربری GitHub<input class="input" id="ghOwner" dir="ltr" value="${esc(gh.owner)}" placeholder="username"></label><label>نام مخزن<input class="input" id="ghRepo" dir="ltr" value="${esc(gh.repo)}" placeholder="my-gallery"></label>
+      <label>شاخه (Branch)<input class="input" id="ghBranch" dir="ltr" value="${esc(gh.branch)}" placeholder="main"></label><label>توکن دسترسی (Personal Access Token)<input class="input" id="ghToken" type="password" dir="ltr" value="${esc(gh.token)}" placeholder="github_pat_…" autocomplete="off"></label></div>
+      <ol class="steps" style="margin:.9rem 0"><li>در GitHub به <b>Settings ‹ Developer settings ‹ Personal access tokens ‹ Fine-grained tokens</b> بروید و Generate new token بزنید.</li><li>در Repository access فقط همین مخزن را انتخاب کنید و در Permissions برای <b>Contents</b> گزینه <b>Read and write</b> را بدهید.</li><li>توکن را اینجا بچسبانید. توکن فقط در همین مرورگر ذخیره می‌شود و جایی ارسال نمی‌شود جز api.github.com.</li></ol>
+      <div class="btn-row"><button class="btn" id="ghSave">ذخیره و آزمایش اتصال</button><button class="btn primary" id="ghPub">${G.icon('upload', 16)} انتشار روی سایت</button><button class="btn ghost" id="ghForget">فراموش کردن توکن</button></div></div>
+      <div class="card-box"><h3>انتشار دستی با ZIP</h3>
+      <div class="note" style="margin-bottom:.8rem">اگر نمی‌خواهید توکن وارد کنید، بسته را دانلود و در مخزن جایگزین کنید:</div>
       <ol class="steps"><li>روی <b>دانلود بسته انتشار</b> بزنید تا فایل ZIP ساخته شود.</li><li>ZIP را باز کنید؛ پوشه‌های <b>data</b> و <b>assets/images</b> را در ریشه مخزن GitHub جایگزین کنید (پوشه قبلی را کامل عوض کنید تا فایل‌های نمونه و قدیمی نمانند).</li><li>تغییرات را <b>commit</b> و <b>push</b> کنید؛ بعد از چند دقیقه سایت به‌روز می‌شود.</li></ol>
       <div class="btn-row" style="margin-top:1rem"><button class="btn primary" id="pkg">${G.icon('download', 16)} دانلود بسته انتشار (ZIP)</button></div></div>
       <div class="card-box"><h3>مدیریت داده‌ها</h3><div class="btn-row">
@@ -340,6 +366,16 @@
       <button class="btn" id="clearAll">حذف همه تصاویر و آلبوم‌ها</button>
       <button class="btn danger" id="resetLocal">بازگشت به نسخه منتشرشده (حذف پیش‌نویس محلی)</button></div></div>`;
     if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { const u = $('#usage'); if (u) u.textContent = fa((e.usage / 1048576).toFixed(1)) + ' MB'; }).catch(() => {}); else $('#usage').textContent = '—';
+    const readGh = () => ({ owner: $('#ghOwner').value.trim(), repo: $('#ghRepo').value.trim(), branch: $('#ghBranch').value.trim() || 'main', token: $('#ghToken').value.trim() });
+    $('#ghSave').onclick = async e => {
+      const b = e.currentTarget, c = readGh(); G.GitHub.setCfg(c);
+      if (!c.owner || !c.repo || !c.token) { G.toast('نام کاربری، مخزن و توکن را وارد کنید'); return; }
+      b.disabled = true;
+      try { const n = await G.GitHub.test(c); G.toast('اتصال برقرار شد: ' + n, 'ok'); } catch (err) { G.toast(G.GitHub.explain(err), 'err'); }
+      b.disabled = false;
+    };
+    $('#ghPub').onclick = e => { G.GitHub.setCfg(readGh()); publishNow(e.currentTarget, G.icon('upload', 16) + ' انتشار روی سایت'); };
+    $('#ghForget').onclick = () => { G.GitHub.forgetToken(); $('#ghToken').value = ''; G.toast('توکن از این مرورگر پاک شد', 'ok'); };
     $('#pkg').onclick = async () => {
       const b = $('#pkg'); b.disabled = true;
       try {
